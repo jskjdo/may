@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记忆卡片游戏</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36D399',
+            accent: '#F59E0B',
+            dark: '#1F2937',
+            light: '#F9FAFB'
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-flip {
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+      }
+      .card-flipped {
+        transform: rotateY(180deg);
+      }
+      .card-face {
+        backface-visibility: hidden;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+      .card-back {
+        transform: rotateY(180deg);
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .animate-pulse-slow {
+        animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col">
+  <!-- 导航栏 -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+      <a href="#" class="text-2xl font-bold text-primary flex items-center">
+        <i class="fa fa-puzzle-piece mr-2"></i>
+        <span>记忆卡片游戏</span>
+      </a>
+      
+      <nav class="hidden md:flex space-x-6">
+        <a href="#" class="font-medium hover:text-primary transition-colors">首页</a>
+        <a href="#" class="font-medium hover:text-primary transition-colors">排行榜</a>
+        <a href="#" class="font-medium hover:text-primary transition-colors">关于</a>
+      </nav>
+      
+      <button class="md:hidden text-gray-700 focus:outline-none">
+        <i class="fa fa-bars text-xl"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <!-- 游戏信息栏 -->
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="flex flex-col items-center md:items-start">
+          <span class="text-sm text-gray-500">当前关卡</span>
+          <span id="level" class="text-2xl font-bold text-primary">1</span>
+        </div>
+        
+        <div class="flex flex-col items-center md:items-start">
+          <span class="text-sm text-gray-500">已用时间</span>
+          <span id="timer" class="text-2xl font-bold text-dark">00:00</span>
+        </div>
+        
+        <div class="flex flex-col items-center md:items-start">
+          <span class="text-sm text-gray-500">尝试次数</span>
+          <span id="attempts" class="text-2xl font-bold text-dark">0</span>
+        </div>
+        
+        <div class="flex justify-center md:justify-end mt-4 md:mt-0">
+          <button id="restart-btn" class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center">
+            <i class="fa fa-refresh mr-2"></i> 重新开始
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 游戏区域 -->
+    <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+      <h2 class="text-2xl font-bold mb-6 text-center">找出所有匹配的卡片</h2>
+      
+      <!-- 难度选择 -->
+      <div class="flex justify-center mb-8">
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+          <button data-difficulty="easy" class="difficulty-btn bg-primary text-white px-4 py-2 rounded-l-lg font-medium">简单</button>
+          <button data-difficulty="medium" class="difficulty-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 font-medium">中等</button>
+          <button data-difficulty="hard" class="difficulty-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-r-lg font-medium">困难</button>
+        </div>
+      </div>
+      
+      <!-- 卡片网格 -->
+      <div id="game-board" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <!-- 卡片将通过JavaScript动态生成 -->
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-dark text-white py-8">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
+          <h3 class="text-xl font-bold mb-2">记忆卡片游戏</h3>
+          <p class="text-gray-400">锻炼记忆力的小游戏</p>
+        </div>
+        
+        <div class="flex space-x-6">
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <i class="fa fa-github text-xl"></i>
+          </a>
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <i class="fa fa-twitter text-xl"></i>
+          </a>
+          <a href="#" class="text-gray-400 hover:text-white transition-colors">
+            <i class="fa fa-linkedin text-xl"></i>
+          </a>
+        </div>
+      </div>
+      
+      <div class="border-t border-gray-800 mt-6 pt-6 text-center text-gray-400 text-sm">
+        &copy; 2023 记忆卡片游戏 | 版权所有
+      </div>
+    </div>
+  </footer>
+
+  <!-- 游戏胜利模态框 -->
+  <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all scale-95 opacity-0" id="modal-content">
+      <div class="text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-500 mb-4">
+          <i class="fa fa-trophy text-3xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold mb-2">恭喜你！</h3>
+        <p class="text-gray-600 mb-6">你成功完成了游戏</p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <span class="text-sm text-gray-500">用时</span>
+            <p id="final-time" class="text-xl font-bold text-dark">00:00</p>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <span class="text-sm text-gray-500">尝试次数</span>
+            <p id="final-attempts" class="text-xl font-bold text-dark">0</p>
+          </div>
+        </div>
+        
+        <div class="flex space-x-4">
+          <button id="next-level-btn" class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors flex-1">
+            下一关
+          </button>
+          <button id="close-modal-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors flex-1">
+            关闭
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 游戏数据
+    const gameData = {
+      icons: [
+        'fa-heart', 'fa-star', 'fa-bell', 'fa-coffee', 'fa-diamond', 'fa-plane',
+        'fa-rocket', 'fa-tree', 'fa-car', 'fa-anchor', 'fa-bicycle', 'fa-camera',
+        'fa-key', 'fa-moon-o', 'fa-sun-o', 'fa-tree', 'fa-umbrella', 'fa-anchor'
+      ],
+      currentLevel: 1,
+      timer: null,
+      seconds: 0,
+      minutes: 0,
+      attempts: 0,
+      flippedCards: [],
+      matchedPairs: 0,
+      difficulty: 'easy',
+      cardsPerLevel: {
+        easy: 8,
+        medium: 12,
+        hard: 16
+      }
+    };
+
+    // DOM元素
+    const gameBoard = document.getElementById('game-board');
+    const timerElement = document.getElementById('timer');
+    const attemptsElement = document.getElementById('attempts');
+    const levelElement = document.getElementById('level');
+    const restartBtn = document.getElementById('restart-btn');
+    const successModal = document.getElementById('success-modal');
+    const modalContent = document.getElementById('modal-content');
+    const finalTimeElement = document.getElementById('final-time');
+    const finalAttemptsElement = document.getElementById('final-attempts');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+
+    // 初始化游戏
+    function initGame() {
+      clearInterval(gameData.timer);
+      gameData.seconds = 0;
+      gameData.minutes = 0;
+      gameData.attempts = 0;
+      gameData.flippedCards = [];
+      gameData.matchedPairs = 0;
+      
+      timerElement.textContent = '00:00';
+      attemptsElement.textContent = '0';
+      levelElement.textContent = gameData.currentLevel;
+      
+      generateCards();
+      startTimer();
+    }
+
+    // 生成卡片
+    function generateCards() {
+      gameBoard.innerHTML = '';
+      
+      // 根据难度选择卡片数量
+      const cardsCount = gameData.cardsPerLevel[gameData.difficulty];
+      const selectedIcons = gameData.icons.slice(0, cardsCount / 2);
+      const cardIcons = [...selectedIcons, ...selectedIcons]; // 复制一份以形成配对
+      
+      // 随机打乱卡片顺序
+      shuffleArray(cardIcons);
+      
+      // 创建卡片元素
+      cardIcons.forEach(icon => {
+        const card = document.createElement('div');
+        card.className = 'card-flip relative aspect-square cursor-pointer';
+        card.dataset.icon = icon;
+        
+        card.innerHTML = `
+          <div class="card-face card-front bg-primary rounded-xl flex items-center justify-center shadow-md">
+            <i class="fa fa-question text-white text-3xl"></i>
+          </div>
+          <div class="card-face card-back bg-white rounded-xl flex items-center justify-center shadow-md border-2 border-primary">
+            <i class="fa ${icon} text-primary text-3xl"></i>
+          </div>
+        `;
+        
+        card.addEventListener('click', flipCard);
+        gameBoard.appendChild(card);
+      });
+    }
+
+    // 洗牌算法
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    // 翻牌函数
+    function flipCard() {
+      const card = this;
+      
+      // 如果卡片已经翻开或已匹配，则忽略点击
+      if (card.classList.contains('card-flipped') || gameData.flippedCards.length >= 2) {
+        return;
+      }
+      
+      // 翻牌动画
+      card.classList.add('card-flipped');
+      gameData.flippedCards.push(card);
+      
+      // 如果翻开了两张卡片，检查是否匹配
+      if (gameData.flippedCards.length === 2) {
+        gameData.attempts++;
+        attemptsElement.textContent = gameData.attempts;
+        
+        setTimeout(checkForMatch, 1000);
+      }
+    }
+
+    // 检查卡片是否匹配
+    function checkForMatch() {
+      const [card1, card2] = gameData.flippedCards;
+      
+      if (card1.dataset.icon === card2.dataset.icon) {
+        // 匹配成功
+        card1.removeEventListener('click', flipCard);
+        card2.removeEventListener('click', flipCard);
+        card1.classList.add('opacity-70');
+        card2.classList.add('opacity-70');
+        gameData.matchedPairs++;
+        
+        // 添加匹配成功的动画效果
+        card1.classList.add('bg-green-100');
+        card2.classList.add('bg-green-100');
+        
+        // 检查游戏是否完成
+        const cardsCount = gameData.cardsPerLevel[gameData.difficulty];
+        if (gameData.matchedPairs === cardsCount / 2) {
+          clearInterval(gameData.timer);
+          showSuccessModal();
+        }
+      } else {
+        // 匹配失败，翻回
+        setTimeout(() => {
+          card1.classList.remove('card-flipped');
+          card2.classList.remove('card-flipped');
+        }, 500);
+      }
+      
+      gameData.flippedCards = [];
+    }
+
+    // 开始计时器
+    function startTimer() {
+      gameData.timer = setInterval(() => {
+        gameData.seconds++;
+        
+        if (gameData.seconds >= 60) {
+          gameData.seconds = 0;
+          gameData.minutes++;
+        }
+        
+        const formattedTime = `${gameData.minutes.toString().padStart(2, '0')}:${gameData.seconds.toString().padStart(2, '0')}`;
+        timerElement.textContent = formattedTime;
+      }, 1000);
+    }
+
+    // 显示成功模态框
+    function showSuccessModal() {
+      const formattedTime = `${gameData.minutes.toString().padStart(2, '0')}:${gameData.seconds.toString().padStart(2, '0')}`;
+      finalTimeElement.textContent = formattedTime;
+      finalAttemptsElement.textContent = gameData.attempts;
+      
+      successModal.classList.remove('hidden');
+      
+      // 添加模态框动画
+      setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    // 隐藏成功模态框
+    function hideSuccessModal() {
+      modalContent.classList.remove('scale-100', 'opacity-100');
+      modalContent.classList.add('scale-95', 'opacity-0');
+      
+      setTimeout(() => {
+        successModal.classList.add('hidden');
+      }, 300);
+    }
+
+    // 下一关
+    function nextLevel() {
+      gameData.currentLevel++;
+      hideSuccessModal();
+      initGame();
+    }
+
+    // 设置难度
+    function setDifficulty(difficulty) {
+      gameData.difficulty = difficulty;
+      
+      // 更新按钮样式
+      difficultyBtns.forEach(btn => {
+        if (btn.dataset.difficulty === difficulty) {
+          btn.classList.remove('bg-gray-200', 'hover:bg-gray-300', 'text-gray-700');
+          btn.classList.add('bg-primary', 'text-white');
+        } else {
+          btn.classList.remove('bg-primary', 'text-white');
+          btn.classList.add('bg-gray-200', 'hover:bg-gray-300', 'text-gray-700');
+        }
+      });
+      
+      // 重新开始游戏
+      initGame();
+    }
+
+    // 事件监听
+    restartBtn.addEventListener('click', initGame);
+    nextLevelBtn.addEventListener('click', nextLevel);
+    closeModalBtn.addEventListener('click', hideSuccessModal);
+    
+    difficultyBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        setDifficulty(btn.dataset.difficulty);
+      });
+    });
+
+    // 初始化游戏
+    document.addEventListener('DOMContentLoaded', () => {
+      initGame();
+    });
+  </script>
+</body>
+</html>    
